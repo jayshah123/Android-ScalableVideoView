@@ -10,7 +10,12 @@ android {
         versionCode VERSION_CODE as int
         versionName VERSION_NAME
     }
+
+    lintOptions{
+        abortOnError false
+    }
 }
+
 
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
