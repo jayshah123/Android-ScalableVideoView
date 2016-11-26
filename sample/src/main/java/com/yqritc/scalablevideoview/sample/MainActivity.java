@@ -1,9 +1,11 @@
 package com.yqritc.scalablevideoview.sample;
 
+import com.yqritc.scalablevideoview.ScalableExoVideoView;
 import com.yqritc.scalablevideoview.ScalableType;
 import com.yqritc.scalablevideoview.ScalableVideoView;
 
 import android.media.MediaPlayer;
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.view.Menu;
@@ -15,29 +17,24 @@ import java.io.IOException;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
 
-    private ScalableVideoView mVideoView;
+    private ScalableExoVideoView mVideoView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        mVideoView = (ScalableVideoView) findViewById(R.id.video_view);
+        mVideoView = (ScalableExoVideoView) findViewById(R.id.video_view);
         findViewById(R.id.btn_next).setOnClickListener(this);
 
+
+//            mVideoView.setRawData(R.raw.landscape_sample);
         try {
-            mVideoView.setRawData(R.raw.landscape_sample);
-            mVideoView.setVolume(0, 0);
-            mVideoView.setLooping(true);
-            mVideoView.prepare(new MediaPlayer.OnPreparedListener() {
-                @Override
-                public void onPrepared(MediaPlayer mp) {
-                    mVideoView.start();
-                }
-            });
-        } catch (IOException ioe) {
-            //ignore
+            mVideoView.setDataSource(MainActivity.this, Uri.parse("http://clips.vorwaerts-gmbh.de/VfE_html5.mp4"));
+        } catch (IOException e) {
+            e.printStackTrace();
         }
+        mVideoView.setVolume(0, 0);
     }
 
     @Override

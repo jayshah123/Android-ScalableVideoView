@@ -9,7 +9,14 @@
         android:layout_marginBottom="100dp"
         android:background="@android:color/black"/>
 
-    <com.yqritc.scalablevideoview.ScalableVideoView
+    <!--<com.yqritc.scalablevideoview.ScalableVideoView-->
+        <!--android:id="@+id/video_view"-->
+        <!--android:layout_width="match_parent"-->
+        <!--android:layout_height="match_parent"-->
+        <!--android:layout_marginBottom="100dp"-->
+        <!--app:scalableType="fitCenter"/>-->
+
+    <com.yqritc.scalablevideoview.ScalableExoVideoView
         android:id="@+id/video_view"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
