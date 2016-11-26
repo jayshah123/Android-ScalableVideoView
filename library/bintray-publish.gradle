@@ -9,7 +9,6 @@ publishing {
             artifactId ARTIFACT_ID
 //            artifact androidJar
             artifact "build/outputs/aar/library-release.aar"
-            artifact androidJavadocsJar
             artifact androidSourcesJar
             pom.withXml {
                 Node root = asNode()
