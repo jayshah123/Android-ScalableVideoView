@@ -30,7 +30,9 @@ import com.yqritc.scalablevideoview.player.ExtractorRendererBuilder;
 import com.yqritc.scalablevideoview.player.HlsRendererBuilder;
 import com.yqritc.scalablevideoview.player.WidevineTestMediaDrmCallback;
 
+import java.io.File;
 import java.io.FileDescriptor;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
@@ -49,11 +51,16 @@ public class ScalableExoVideoView extends TextureView implements TextureView.Sur
     private Uri mUri;
     private Context mContext;
     private Surface mSurfaceTextureSurface;
+    private int mPlaybackState = ExoPlayer.STATE_IDLE;
+    private boolean mPlayWhenReady = true;
+    private boolean isThrowOnIllegalStates = false;
 
     private static final boolean DEBUG_INIT_RELEASE = true;
     private static final boolean DEBUG_ERROR = true;
     private static final boolean DEBUG_SURFACE = true;
     private static final boolean DEBUG_STATE = true;
+    private static final boolean DEBUG_CALLBACKS = true;
+    private boolean THROW_ON_ILLEGAL_STATES = false || isThrowOnIllegalStates;
 
     int mVideoHeight = 0, mVideoWidth = 0;
     private int contentType;
@@ -85,6 +92,14 @@ public class ScalableExoVideoView extends TextureView implements TextureView.Sur
         int scaleType = a.getInt(R.styleable.scaleStyle_scalableType, ScalableType.NONE.ordinal());
         a.recycle();
         mScalableType = ScalableType.values()[scaleType];
+    }
+
+    public boolean isThrowOnIllegalStates() {
+        return isThrowOnIllegalStates;
+    }
+
+    public void setIsThrowOnIllegalStates(boolean isThrowOnIllegalStates) {
+        this.isThrowOnIllegalStates = isThrowOnIllegalStates;
     }
 
     @Override
@@ -242,6 +257,11 @@ public class ScalableExoVideoView extends TextureView implements TextureView.Sur
         return Util.inferContentType(lastPathSegment);
     }
 
+    private void initUriAndContentType(Uri uri){
+        mUri = uri;
+        contentType = inferContentType(mUri,"");
+    }
+
     public void setRawData(@RawRes int id) throws IOException {
         AssetFileDescriptor afd = getResources().openRawResourceFd(id);
         setDataSource(afd);
@@ -259,7 +279,16 @@ public class ScalableExoVideoView extends TextureView implements TextureView.Sur
     }
 
     public void setDataSource(@NonNull String path) throws IOException {
+        File f = new File(path);
+        if(!f.exists()){
+            if(THROW_ON_ILLEGAL_STATES){
+                throw new FileNotFoundException(" setDatasource file should exist");
+            }
+        }
+
+        initUriAndContentType(Uri.fromFile(f));
         initializeMediaPlayer();
+
 //        mMediaPlayer.setDataSource(path);
     }
 
@@ -268,8 +297,7 @@ public class ScalableExoVideoView extends TextureView implements TextureView.Sur
         if(DEBUG_INIT_RELEASE) {
             Log.d(TAG, " setDataSource with Headers uri = "+uri);
         }
-        mUri = uri;
-        contentType = inferContentType(mUri,"");
+        initUriAndContentType(uri);
         initializeMediaPlayer();
 //        mMediaPlayer.setDataSource(context, uri, headers);
     }
@@ -278,20 +306,22 @@ public class ScalableExoVideoView extends TextureView implements TextureView.Sur
         if(DEBUG_INIT_RELEASE){
             Log.d(TAG," setDataSource uri = " + uri);
         }
-        mUri = uri;
-        contentType = inferContentType(mUri,"");
+        initUriAndContentType(uri);
         initializeMediaPlayer();
 //        mMediaPlayer.setDataSource(context, uri);
     }
 
     public void setDataSource(@NonNull FileDescriptor fd, long offset, long length)
             throws IOException {
-        initializeMediaPlayer();
+//        initializeMediaPlayer();
+        Log.d(TAG," setDataSource(fd, offset, length) not supported right now!");
 //        mMediaPlayer.setDataSource(fd, offset, length);
     }
 
     public void setDataSource(@NonNull FileDescriptor fd) throws IOException {
-        initializeMediaPlayer();
+       // initializeMediaPlayer();
+        Log.d(TAG," setDataSource(fd) with  not supported right now!");
+
 //        mMediaPlayer.setDataSource(fd);
     }
 
@@ -338,13 +368,38 @@ public class ScalableExoVideoView extends TextureView implements TextureView.Sur
         demoPlayer.setInfoListener(listener);
     }
 
+    public int getBufferPercentage() {
+        if (demoPlayer != null) {
+            return demoPlayer.getBufferedPercentage();
+        } else {
+            if(THROW_ON_ILLEGAL_STATES) {
+                throw new IllegalStateException("Calling getBufferPercentage in empty demoPlayer");
+            }
+            return 0;
+        }
+    }
+
     public int getCurrentPosition() {
-        return (int) demoPlayer.getCurrentPosition();
+        if(demoPlayer != null){
+            return (int) demoPlayer.getCurrentPosition();
+        } else {
+            if(THROW_ON_ILLEGAL_STATES){
+                throw new IllegalStateException("Calling getCurrentPosition in empty demoPlayer");
+            }
+            return 0;
+        }
 //        return mMediaPlayer.getCurrentPosition();
     }
 
     public int getDuration() {
-        return (int) demoPlayer.getDuration();
+        if(demoPlayer != null) {
+            return (int) demoPlayer.getDuration();
+        } else {
+            if(THROW_ON_ILLEGAL_STATES){
+                throw new IllegalStateException("Calling getDuration in empty demoPlayer");
+            }
+            return 1;
+        }
 //        return mMediaPlayer.getDuration();
     }
 
@@ -370,12 +425,24 @@ public class ScalableExoVideoView extends TextureView implements TextureView.Sur
     }
 
     public void pause() {
-        demoPlayer.setPlayWhenReady(false);
+        if(demoPlayer != null){
+            demoPlayer.setPlayWhenReady(false);
+        } else {
+            if(THROW_ON_ILLEGAL_STATES) {
+                throw new IllegalStateException("calling pause on empty demoPlayer");
+            }
+        }
 //        mMediaPlayer.pause();
     }
 
     public void seekTo(int msec) {
-        demoPlayer.seekTo(msec);
+        if(demoPlayer != null) {
+            demoPlayer.seekTo(msec);
+        } else {
+            if(THROW_ON_ILLEGAL_STATES) {
+                throw new IllegalStateException("calling seekTo on empty demoPlayer");
+            }
+        }
 //        mMediaPlayer.seekTo(msec);
     }
 
@@ -389,11 +456,23 @@ public class ScalableExoVideoView extends TextureView implements TextureView.Sur
 
 
     public void start() {
-        demoPlayer.setPlayWhenReady(true);
+        if(demoPlayer != null){
+            demoPlayer.setPlayWhenReady(true);
+        } else {
+            if(THROW_ON_ILLEGAL_STATES){
+                throw new IllegalStateException("start() calling setPlayWhenReady(true) on empty demoPlayer");
+            }
+        }
     }
 
     public void stop() {
-        demoPlayer.setPlayWhenReady(false);
+        if(demoPlayer != null){
+            demoPlayer.setPlayWhenReady(false);
+        } else {
+            if(THROW_ON_ILLEGAL_STATES){
+                throw new IllegalStateException("stop() calling setPlayWhenReady(false) on empty demoPlayer");
+            }
+        }
     }
 
     public void reset() {
@@ -404,8 +483,12 @@ public class ScalableExoVideoView extends TextureView implements TextureView.Sur
         if(DEBUG_INIT_RELEASE){
             Log.d(TAG," release() => demoPlayer.release()");
         }
-        demoPlayer.release();
+        if(demoPlayer != null){
+            demoPlayer.release();
+        }
         demoPlayer = null;
+        mPlaybackState = ExoPlayer.STATE_IDLE;
+        playerNeedsPrepare = true;
 //        reset();
 //        mMediaPlayer.release();
 //        mMediaPlayer = null;
@@ -418,9 +501,14 @@ public class ScalableExoVideoView extends TextureView implements TextureView.Sur
         String text = "playWhenReady=" + playWhenReady + ", playbackState=";
         switch(playbackState) {
             case ExoPlayer.STATE_BUFFERING:
+                if(mPlaybackState == ExoPlayer.STATE_PREPARING){
+                    onPrepared();
+                }
+                onBufferingStart();
                 text += "buffering";
                 break;
             case ExoPlayer.STATE_ENDED:
+                onCompleted();
                 text += "ended";
                 break;
             case ExoPlayer.STATE_IDLE:
@@ -430,6 +518,12 @@ public class ScalableExoVideoView extends TextureView implements TextureView.Sur
                 text += "preparing";
                 break;
             case ExoPlayer.STATE_READY:
+                if(mPlaybackState == ExoPlayer.STATE_PREPARING){
+                    onPrepared();
+                }
+                if(mPlaybackState == ExoPlayer.STATE_BUFFERING) {
+                    onBufferningEnd();
+                }
                 text += "ready";
                 break;
             default:
@@ -440,6 +534,33 @@ public class ScalableExoVideoView extends TextureView implements TextureView.Sur
         if(DEBUG_STATE){
             Log.d(TAG, " onStateChanged: "+ text);
         }
+
+        mPlaybackState = playbackState;
+        mPlayWhenReady = playWhenReady;
+    }
+
+    protected void onCompleted() {
+        if(DEBUG_CALLBACKS){
+            Log.d(TAG, " onCompleted ");
+        }
+    }
+
+    protected void onBufferningEnd() {
+        if(DEBUG_CALLBACKS) {
+            Log.d(TAG, " onBufferingEnd() ");
+        }
+    }
+
+    protected void onBufferingStart() {
+        if(DEBUG_CALLBACKS){
+            Log.d(TAG, " onBufferingStart() ");
+        }
+    }
+
+    protected void onPrepared() {
+        if(DEBUG_CALLBACKS){
+            Log.d(TAG, " onPrepared() ");
+        }
     }
 
     @Override
@@ -447,6 +568,7 @@ public class ScalableExoVideoView extends TextureView implements TextureView.Sur
         if(DEBUG_ERROR) {
             Log.d(TAG, " onError() e = "+e.getMessage());
         }
+        mPlaybackState = ExoPlayer.STATE_IDLE;
         playerNeedsPrepare = true;
     }
 
