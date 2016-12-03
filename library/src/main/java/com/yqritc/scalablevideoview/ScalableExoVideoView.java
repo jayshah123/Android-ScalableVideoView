@@ -7,6 +7,7 @@ import android.content.res.TypedArray;
 import android.graphics.Matrix;
 import android.graphics.SurfaceTexture;
 import android.media.MediaPlayer;
+import android.media.PlaybackParams;
 import android.net.Uri;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -314,13 +315,13 @@ public class ScalableExoVideoView extends TextureView implements TextureView.Sur
     public void setDataSource(@NonNull FileDescriptor fd, long offset, long length)
             throws IOException {
 //        initializeMediaPlayer();
-        Log.d(TAG," setDataSource(fd, offset, length) not supported right now!");
+        Log.d(TAG, " setDataSource(fd, offset, length) not supported right now!");
 //        mMediaPlayer.setDataSource(fd, offset, length);
     }
 
     public void setDataSource(@NonNull FileDescriptor fd) throws IOException {
        // initializeMediaPlayer();
-        Log.d(TAG," setDataSource(fd) with  not supported right now!");
+        Log.d(TAG, " setDataSource(fd) with  not supported right now!");
 
 //        mMediaPlayer.setDataSource(fd);
     }
@@ -454,6 +455,18 @@ public class ScalableExoVideoView extends TextureView implements TextureView.Sur
 //        mMediaPlayer.setVolume(leftVolume, rightVolume);
     }
 
+    public void setPlaybackSpeed(float rate){
+        if(Util.SDK_INT < 23){
+            return;
+        }
+        if(demoPlayer != null){
+            demoPlayer.setPlaybackSpeed(new PlaybackParams().setSpeed(rate));
+        } else {
+            if(DEBUG_ERROR){
+                Log.d(TAG," Trying to set playback speed when demoplayer null");
+            }
+        }
+    }
 
     public void start() {
         if(demoPlayer != null){

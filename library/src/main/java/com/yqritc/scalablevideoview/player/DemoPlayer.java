@@ -44,8 +44,10 @@ import com.google.android.exoplayer.util.DebugTextViewHelper;
 import com.google.android.exoplayer.util.PlayerControl;
 
 import android.media.MediaCodec.CryptoException;
+import android.media.PlaybackParams;
 import android.os.Handler;
 import android.os.Looper;
+import android.util.Log;
 import android.view.Surface;
 
 import java.io.IOException;
@@ -177,6 +179,7 @@ public class DemoPlayer implements ExoPlayer.Listener, ChunkSampleSource.EventLi
 
   private Surface surface;
   private TrackRenderer videoRenderer;
+  private TrackRenderer audioRenderer;
   private CodecCounters codecCounters;
   private Format videoFormat;
   private int videoTrackToRestore;
@@ -267,6 +270,14 @@ public class DemoPlayer implements ExoPlayer.Listener, ChunkSampleSource.EventLi
     return backgrounded;
   }
 
+  public void setPlaybackSpeed(PlaybackParams playbackParams) {
+    if(audioRenderer == null){
+      return;
+    }
+    Log.d("DemoPlayer", " playback params = " + playbackParams.getSpeed());
+    player.sendMessage(audioRenderer, MediaCodecAudioTrackRenderer.MSG_SET_PLAYBACK_PARAMS, playbackParams);
+  }
+
   public void setBackgrounded(boolean backgrounded) {
     if (this.backgrounded == backgrounded) {
       return;
@@ -288,6 +299,7 @@ public class DemoPlayer implements ExoPlayer.Listener, ChunkSampleSource.EventLi
     rendererBuilder.cancel();
     videoFormat = null;
     videoRenderer = null;
+    audioRenderer = null;
     rendererBuildingState = RENDERER_BUILDING_STATE_BUILDING;
     maybeReportPlayerState();
     // the renderer building is delegated to the guy who constructed this class which on completion
@@ -311,6 +323,7 @@ public class DemoPlayer implements ExoPlayer.Listener, ChunkSampleSource.EventLi
     }
     // Complete preparation.
     this.videoRenderer = renderers[TYPE_VIDEO];
+    this.audioRenderer = renderers[TYPE_AUDIO];
     this.codecCounters = videoRenderer instanceof MediaCodecTrackRenderer
         ? ((MediaCodecTrackRenderer) videoRenderer).codecCounters
         : renderers[TYPE_AUDIO] instanceof MediaCodecTrackRenderer
